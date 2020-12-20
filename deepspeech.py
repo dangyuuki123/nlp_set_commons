@@ -74,7 +74,7 @@ def SpeechModel (model,
 
     loss_out = Lambda(ctc_lambda_func, output_shape=(1,),
                       name='ctc')([output, labels, input_length, label_length])
-    return tf.keras.Model(inputs=[input_, labels, input_length, label_length], outputs=[loss_out])
+    return tf.keras.Model(inputs=[input_, labels, input_length, label_length], outputs=[loss_out]) , tf.keras.Model(input_ , output)
             
         
             
