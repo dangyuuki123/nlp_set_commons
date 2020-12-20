@@ -1,6 +1,6 @@
 preprocessing = {
 
-    'data_dir': '/home/u52660/data/25hours/',
+    'data_dir': 'spec/',
     'window_size': 20,
     'step_size': 10,
 
