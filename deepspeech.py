@@ -66,7 +66,7 @@ def SpeechModel (model,
     output = tf.keras.layers.BatchNormalization()(output)
     output = tf.keras.layers.ReLU()(output)
     output = tf.keras.layers.Dropout(fc_dropout)(output)
-    output = tf.keras.layers.Dense(units=vocabulary_size, activation="sigmoid",
+    output = tf.keras.layers.Dense(units=vocabulary_size, activation="softmax",
                                     use_bias=True)(output)
     labels = Input(name='labels', shape=model['max_label_length'], dtype='int32')
     input_length = Input(name='input_lengths', shape=[1], dtype='int64')
