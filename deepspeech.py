@@ -11,7 +11,7 @@ def shape_list(x):
 
 def merge_two_last_dims(x):
     b, d, f, c = shape_list(x)
-    return tf.reshape(x, shape=[b, d, f * c])
+    return tf.reshape(x, shape=[b, -1, f * c])
 def ctc_lambda_func(args):
     y_pred, labels, input_length, label_length = args
     print(y_pred.shape)
@@ -42,7 +42,7 @@ def SpeechModel (model,
     #assert dropout >= 0.0 
     input_ = tf.keras.Input(name = 'inputs' , shape = (model['max_input_length'] , 80, 1))
    
-    output = Conv2D(32 , kernel_size= [11,41] , strides = [1,1] , padding='same' , dtype = tf.float32)(input_)
+    output = Conv2D(32 , kernel_size= [11,41] , strides = [1,2] , padding='same' , dtype = tf.float32)(input_)
     output = tf.keras.layers.BatchNormalization()(output)
     output = tf.keras.layers.ReLU()(output)
     output = tf.keras.layers.Dropout(conv_dropout)(output)
@@ -74,7 +74,7 @@ def SpeechModel (model,
 
     loss_out = Lambda(ctc_lambda_func, output_shape=(1,),
                       name='ctc')([output, labels, input_length, label_length])
-    return tf.keras.Model(inputs=[input_, labels, input_length, label_length], outputs=[loss_out]) , tf.keras.Model(input_ , output)
+    return tf.keras.Model(inputs=[input_, labels, input_length, label_length], outputs=[loss_out]) , tf.keras.Model(inputs=input_ , outputs=output)
             
         
             
