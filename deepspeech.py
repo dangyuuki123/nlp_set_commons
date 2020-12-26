@@ -42,7 +42,7 @@ def SpeechModel (model,
     #assert dropout >= 0.0 
     input_ = tf.keras.Input(name = 'inputs' , shape = (model['max_input_length'] , 80, 1))
    
-    output = Conv2D(32 , kernel_size= [11,41] , strides = [1,2] , padding='same' , dtype = tf.float32)(input_)
+    output = Conv2D(32 , kernel_size= [11,41] , strides = [2,2] , padding='same' , dtype = tf.float32)(input_)
     output = tf.keras.layers.BatchNormalization()(output)
     output = tf.keras.layers.ReLU()(output)
     output = tf.keras.layers.Dropout(conv_dropout)(output)
@@ -52,7 +52,7 @@ def SpeechModel (model,
     output = tf.keras.layers.ReLU()(output)
     output = tf.keras.layers.Dropout(conv_dropout)(output)
     
-    output = Conv2D(96, kernel_size= [11,11] , strides = [1,2] , padding='same' , dtype = tf.float32)(output)
+    output = Conv2D(96, kernel_size= [11,21] , strides = [1,2] , padding='same' , dtype = tf.float32)(output)
     output = tf.keras.layers.BatchNormalization()(output)
     output = tf.keras.layers.ReLU()(output)
     output = tf.keras.layers.Dropout(conv_dropout)(output)
