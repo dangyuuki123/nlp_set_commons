@@ -18,7 +18,7 @@ def ctc_lambda_func(args):
     print(labels.shape)
     print(input_length.shape)
     print(label_length.shape)
-    return tf.keras.backend.ctc_batch_cost(labels , y_pred , input_length , label_length)
+    return tf.reduce_mean(tf.keras.backend.ctc_batch_cost(labels , y_pred , input_length , label_length))
 def SpeechModel (model,
                  name: str = "deepspeech2"):
         #super(ConvModule, self).__init__(**kwargs)
@@ -42,17 +42,17 @@ def SpeechModel (model,
     #assert dropout >= 0.0 
     input_ = tf.keras.Input(name = 'inputs' , shape = (model['max_input_length'] , 80, 1))
    
-    output = Conv2D(32 , kernel_size= [11,41] , strides = [2,2] , padding='same' , dtype = tf.float32)(input_)
+    output = Conv2D(32 , kernel_size= [41,11] , strides = [2,2] , padding='same' , dtype = tf.float32)(input_)
     output = tf.keras.layers.BatchNormalization()(output)
     output = tf.keras.layers.ReLU()(output)
     output = tf.keras.layers.Dropout(conv_dropout)(output)
     
-    output = Conv2D(32 , kernel_size= [11,21] , strides = [1,2] , padding='same' , dtype = tf.float32)(output)
+    output = Conv2D(32 , kernel_size= [21,11] , strides = [1,2] , padding='same' , dtype = tf.float32)(output)
     output = tf.keras.layers.BatchNormalization()(output)
     output = tf.keras.layers.ReLU()(output)
     output = tf.keras.layers.Dropout(conv_dropout)(output)
     
-    output = Conv2D(96, kernel_size= [11,21] , strides = [1,2] , padding='same' , dtype = tf.float32)(output)
+    output = Conv2D(96, kernel_size= [21,11] , strides = [1,2] , padding='same' , dtype = tf.float32)(output)
     output = tf.keras.layers.BatchNormalization()(output)
     output = tf.keras.layers.ReLU()(output)
     output = tf.keras.layers.Dropout(conv_dropout)(output)
