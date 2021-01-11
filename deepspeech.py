@@ -14,10 +14,8 @@ def merge_two_last_dims(x):
     return tf.reshape(x, shape=[b, -1, f * c])
 def ctc_lambda_func(args):
     y_pred, labels, input_length, label_length = args
-    print(y_pred.shape)
-    print(labels.shape)
-    print(input_length.shape)
-    print(label_length.shape)
+    with tf.GradientTape() as tape:
+        tape.watch(y_pred)
     return tf.reduce_mean(tf.keras.backend.ctc_batch_cost(labels , y_pred , input_length , label_length))
 def SpeechModel (model,
                  name: str = "deepspeech2"):
