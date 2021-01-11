@@ -49,6 +49,8 @@ def create_data_generator(directory, max_input_length, max_label_length, batch_s
         metadata_reader = csv.DictReader(metadata, fieldnames=['filename', 'spec_length', 'labels_length', 'labels'])
         next(metadata_reader)
         for row in metadata_reader:
+            if(os.path.exists(os.path.join(directory + 'spec/' , row['filename'] +'.npy'))!=1):
+                continue
             audio = np.load(os.path.join(directory + 'spec/' , row['filename'] +'.npy'))
             x.append(audio)
             #x = np.array(x)
