@@ -23,7 +23,7 @@ def SpeechModel (model,
                  name: str = "deepspeech2"):
         #super(ConvModule, self).__init__(**kwargs)
 
-    vocabulary_size = 97
+    vocabulary_size = 95
     conv_type= "conv2d"
     conv_kernels = [[11, 41], [11, 21], [11, 21]]
     conv_strides=[[1, 2], [1, 2], [1, 2]]
