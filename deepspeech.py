@@ -29,7 +29,7 @@ def SpeechModel (model,
     conv_dropout=  0.1
     rnn_nlayers= 5
     rnn_type= "lstm"
-    rnn_units= 1024
+    rnn_units= 800
     rnn_bidirectional=True
     rnn_rowconv=  0
     rnn_dropout= 0.1
@@ -57,7 +57,7 @@ def SpeechModel (model,
     
     output = merge_two_last_dims(output)
     for i in range(7):
-        lstm = tf.keras.layers.LSTM(rnn_units , dropout = rnn_dropout ,  return_sequences=True , use_bias=True)
+        lstm = tf.keras.layers.GRU(rnn_units , dropout = rnn_dropout ,  return_sequences=True , use_bias=True)
         output = tf.keras.layers.Bidirectional(lstm )(output)
         output = SequenceBatchNorm(time_major=False)(output)
         output = tf.keras.layers.Dropout(fc_dropout)(output)
