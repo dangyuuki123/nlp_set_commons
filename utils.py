@@ -62,14 +62,14 @@ def create_data_generator(directory, max_input_length, max_label_length, batch_s
             y.append(k)
             #y = np.array(y)
             input_lengths.append(int(row['spec_length']))
-            label_lengths.append(int(row['labels_length']))
-             if len(x) == 64:
+            label_lengths.append(row['labels_length'])
+            if len(x) == batch_size:
                 yield {
                     'inputs': tf.keras.preprocessing.sequence.pad_sequences(x, maxlen=max_input_length, padding='post' , dtype = 'float32'),
                     'labels': tf.keras.preprocessing.sequence.pad_sequences(y, maxlen=max_label_length, padding='post'),
                     'input_lengths': np.asarray(input_lengths),
                     'label_lengths': np.asarray(label_lengths)
                 }, {
-                    'ctc': np.zeros([64])
+                    'ctc': np.zeros([batch_size])
                 }
                 x, y, input_lengths, label_lengths = [], [], [], []
