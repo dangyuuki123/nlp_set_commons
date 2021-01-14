@@ -56,8 +56,13 @@ def SpeechModel (model,
     output = tf.keras.layers.Dropout(conv_dropout)(output)
     
     output = merge_two_last_dims(output)
-    for i in range(7):
-        lstm = tf.keras.layers.GRU(rnn_units , dropout = rnn_dropout ,  return_sequences=True , use_bias=True)
+    for i in [128 , 128 , 128, 128 , 128]:
+        output = Conv1D(i , kernel_size= 11 , strides = 1 , padding='same' , dtype = tf.float32)(output)
+        output = tf.keras.layers.BatchNormalization()(output)
+        output = tf.keras.layers.ReLU()(output)
+        output = tf.keras.layers.Dropout(conv_dropout)(output)
+    for i in range(5):
+        lstm = tf.keras.layers.LSTM(rnn_units , dropout = rnn_dropout ,  return_sequences=True , use_bias=True)
         output = tf.keras.layers.Bidirectional(lstm )(output)
         output = SequenceBatchNorm(time_major=False)(output)
         output = tf.keras.layers.Dropout(fc_dropout)(output)
