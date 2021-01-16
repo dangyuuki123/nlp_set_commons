@@ -43,7 +43,7 @@ def get_data_details(filename):
                 result['max_label_length'] = int(row['labels_length'])
             result['num_samples'] += 1
     return result 
-def create_data_generator(directory, max_input_length, max_label_length, batch_size=64):
+def create_data_generator(directory, max_input_length, max_label_length, batch_size=16):
     x, y, input_lengths, label_lengths = [], [], [], [] 
     with (open(os.path.join(directory, 'metadata.csv'), 'r')) as metadata:
         metadata_reader = csv.DictReader(metadata, fieldnames=['filename', 'spec_length', 'labels_length', 'labels'])
@@ -62,7 +62,7 @@ def create_data_generator(directory, max_input_length, max_label_length, batch_s
             y.append(k)
             #y = np.array(y)
             input_lengths.append(int(row['spec_length']))
-            label_lengths.append(row['labels_length'])
+            label_lengths.append(int(row['labels_length']))
             if len(x) == batch_size:
                 yield {
                     'inputs': tf.keras.preprocessing.sequence.pad_sequences(x, maxlen=max_input_length, padding='post' , dtype = 'float32'),
