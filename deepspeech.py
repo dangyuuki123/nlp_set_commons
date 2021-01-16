@@ -64,6 +64,7 @@ def SpeechModel (model,
         output = tf.keras.layers.Dropout(conv_dropout)(output)
         output = tf.keras.layers.add([x, output])
         x = output
+     output = x
     for i in range(5):
         lstm = tf.keras.layers.LSTM(rnn_units , dropout = rnn_dropout ,  return_sequences=True , use_bias=True)
         output = tf.keras.layers.Bidirectional(lstm )(output)
