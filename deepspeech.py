@@ -57,14 +57,13 @@ def SpeechModel (model,
     
     output = merge_two_last_dims(output)
     x = output 
-    for i in [256 ,256 , 256 ,256 ,256]:
+    for i in [128 ,256 , 512 ,512 ,728]:
         output = SeparableConv1D(i , kernel_size= 11 , strides = 1 , padding='same' , dtype = tf.float32)(output)
         output = tf.keras.layers.BatchNormalization()(output)
         output = tf.keras.layers.ReLU()(output)
         output = tf.keras.layers.Dropout(conv_dropout)(output)
         x = Conv1D(i , kernel_size= 11 , strides = 1 , padding='same' , dtype = tf.float32)(x)
         output = tf.keras.layers.add([x, output])
-     output = x
     for i in range(5):
         lstm = tf.keras.layers.LSTM(rnn_units , dropout = rnn_dropout ,  return_sequences=True , use_bias=True)
         output = tf.keras.layers.Bidirectional(lstm )(output)
