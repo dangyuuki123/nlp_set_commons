@@ -23,13 +23,13 @@ def SpeechModel (model,
 
     vocabulary_size = 95
     conv_type= "conv2d"
-    conv_kernels = [[11, 41], [11, 21], [11, 21]]
-    conv_strides=[[1, 2], [1, 2], [1, 2]]
-    conv_filters=[32, 32, 96]
-    conv_dropout=  0.1
+    conv_kernels = [256, 384, 512, 640, 768]
+    conv_strides=[11, 13, 17, 21, 25]
+    conv_filters=[11, 13, 17, 21, 25]
+    conv_dropout=[0.2, 0.2, 0.2, 0.3, 0.3]
     rnn_nlayers= 5
     rnn_type= "lstm"
-    rnn_units= 1024
+    rnn_units= 800
     rnn_bidirectional=True
     rnn_rowconv=  0
     rnn_dropout= 0.1
@@ -38,32 +38,14 @@ def SpeechModel (model,
     fc_dropout=  0.1
     assert len(conv_kernels) == len(conv_strides) == len(conv_filters)
     #assert dropout >= 0.0 
-    input_ = tf.keras.Input(name = 'inputs' , shape = (model['max_input_length'] , 80, 1))
+    input_ = tf.keras.Input(name = 'inputs' , shape = (model['max_input_length'] , 80))
+    for i in range(len(conv_kernels)):
    
-    output = Conv2D(32 , kernel_size= [41,11] , strides = [1,2] , padding='same' , dtype = tf.float32)(input_)
-    output = tf.keras.layers.BatchNormalization()(output)
-    output = tf.keras.layers.ReLU()(output)
-    output = tf.keras.layers.Dropout(conv_dropout)(output)
-    
-    output = Conv2D(32 , kernel_size= [21,11] , strides = [1,2] , padding='same' , dtype = tf.float32)(output)
-    output = tf.keras.layers.BatchNormalization()(output)
-    output = tf.keras.layers.ReLU()(output)
-    output = tf.keras.layers.Dropout(conv_dropout)(output)
-    
-    output = Conv2D(96, kernel_size= [21,11] , strides = [1,2] , padding='same' , dtype = tf.float32)(output)
-    output = tf.keras.layers.BatchNormalization()(output)
-    output = tf.keras.layers.ReLU()(output)
-    output = tf.keras.layers.Dropout(conv_dropout)(output)
-    
-    output = merge_two_last_dims(output)
-    x = output 
-    for i in [128 ,256 , 512 ,512 ,728]:
-        output = SeparableConv1D(i , kernel_size= 11 , strides = 1 , padding='same' , dtype = tf.float32)(output)
+        output = Conv1D(256 , kernel_size= 11 , strides = 2 , padding='same' , dilation_rate=1, dtype = tf.float32)(input_)
         output = tf.keras.layers.BatchNormalization()(output)
         output = tf.keras.layers.ReLU()(output)
         output = tf.keras.layers.Dropout(conv_dropout)(output)
-        x = Conv1D(i , kernel_size= 11 , strides = 1 , padding='same' , dtype = tf.float32)(x)
-        output = tf.keras.layers.add([x, output])
+     
     for i in range(5):
         lstm = tf.keras.layers.LSTM(rnn_units , dropout = rnn_dropout ,  return_sequences=True , use_bias=True)
         output = tf.keras.layers.Bidirectional(lstm )(output)
