@@ -46,11 +46,11 @@ def SpeechModel (model,
     x = output 
     for j in range(3):        
         for i in range(len(conv_kernels)):   
-            output = SeparableConv1D(conv_kernels[i] , kernel_size= conv_fillters[i] , strides = 1 , padding='same' , dilation_rate=1, dtype = tf.float32)(input_)
+            output = SeparableConv1D(conv_kernels[i] , kernel_size= conv_fillters[i] , strides = 1 , padding='same' , dilation_rate=1, dtype = tf.float32)(output)
             output = tf.keras.layers.BatchNormalization()(output)
             output = tf.keras.layers.ReLU()(output)
             output = tf.keras.layers.Dropout(conv_dropout[i])(output) 
-         output =  SeparableConv1D(conv_kernels[-1] , kernel_size= conv_fillters[-1] , strides = 1 , padding='same' , dilation_rate=1, dtype = tf.float32)(input_)
+         output =  SeparableConv1D(conv_kernels[-1] , kernel_size= conv_fillters[-1] , strides = 1 , padding='same' , dilation_rate=1, dtype = tf.float32)(output)
          output =  BatchNormalization()(output)
          x = Conv1D(conv_kernels[-1] , kernel_size= conv_fillters[-1] , strides = 1 , padding='same' , dilation_rate=1, dtype = tf.float32)(x)
          x = BatchNormalization()(x)
@@ -64,13 +64,13 @@ def SpeechModel (model,
         output = tf.keras.layers.Bidirectional(lstm )(output)
         output = SequenceBatchNorm(time_major=False)(output)
         output = tf.keras.layers.Dropout(fc_dropout)(output)
-    output = Conv1D(896 , kernel_size= 1 , strides = 1 , padding='same' , dilation_rate=2, dtype = tf.float32)(input_)
+    output = Conv1D(896 , kernel_size= 1 , strides = 1 , padding='same' , dilation_rate=2, dtype = tf.float32)(output)
     output = tf.keras.layers.BatchNormalization()(output)
     output = tf.keras.layers.ReLU()(output)
     output = tf.keras.layers.Dropout(0.4)(output)
     output = tf.keras.layers.Dense(fc_units)(output)
     
-    output = Conv1D(1024 , kernel_size= 1 , strides = 1 , padding='same' , dilation_rate=1, dtype = tf.float32)(input_)
+    output = Conv1D(1024 , kernel_size= 1 , strides = 1 , padding='same' , dilation_rate=1, dtype = tf.float32)(output)
     output = tf.keras.layers.BatchNormalization()(output)
     output = tf.keras.layers.ReLU()(output)
     output = tf.keras.layers.Dropout(0.4)(output)
