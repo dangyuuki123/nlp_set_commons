@@ -51,3 +51,26 @@ class CTCTrainer(BaseTrainer):
             self.model = model
             self.optimizer = tf.keras.optimizers.get(optimizer)
         self.create_checkpoint_manager(max_to_keep, model=self.model, optimizer=self.optimizer)
+    @tf.function(experimental_relax_shapes=True)
+    def _eval_step(self, batch):
+        features, input_length, labels, label_length, _, _ = batch
+
+        logits = self.model(features, training=False)
+
+        per_eval_loss = ctc_loss(
+            y_true=labels, y_pred=logits,
+            input_length=get_reduced_length(input_length, self.model.time_reduction_factor),
+            label_length=label_length,
+            blank=self.text_featurizer.blank
+        )
+
+        # Update metrics
+        self.eval_metrics["ctc_loss"].update_state(per_eval_loss)
+
+    def compile(self, model: tf.keras.Model,
+                optimizer: any,
+                max_to_keep: int = 10):
+        with self.strategy.scope():
+            self.model = model
+            self.optimizer = tf.keras.optimizers.get(optimizer)
+        self.create_checkpoint_manager(max_to_keep, model=self.model, optimizer=self.optimizer)
