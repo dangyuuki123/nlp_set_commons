@@ -23,10 +23,10 @@ def SpeechModel (model,
 
     vocabulary_size = 95
     conv_type= "conv2d"
-    conv_kernels = [256, 384, 512, 640, 768]
-    conv_strides=[11, 13, 17, 21, 25]
-    conv_filters=[11, 13, 17, 21, 25]
-    conv_dropout=[0.2, 0.2, 0.2, 0.3, 0.3]
+    conv_kernels = [32 , 32 ,96]
+    conv_strides=[[2,2],[1,2],[1,2]]
+    conv_filters=[[41 ,11] , [21 ,11] , [21,11]]
+    conv_dropout=0.3
     rnn_nlayers= 5
     rnn_type= "lstm"
     rnn_units= 1024
@@ -38,43 +38,30 @@ def SpeechModel (model,
     fc_dropout=  0.1
     assert len(conv_kernels) == len(conv_strides) == len(conv_filters)
     #assert dropout >= 0.0 
-    input_ = tf.keras.Input(name = 'inputs' , shape = (model['max_input_length'] , 80))
-    output = SeparableConv1D(256 , kernel_size= 11 , strides = 2 , padding='same' , dilation_rate=1, dtype = tf.float32)(input_)
+    input_ = tf.keras.Input(name = 'inputs' , shape = (model['max_input_length'] , 80 , 1 ))
+    output = input_
+    x = output
+    for i in range(len(conv_kernels)):   
+        output = Conv2D(conv_kernels[i] , kernel_size= conv_filters[i] , strides =conv_strides[i]  , padding='same' , dilation_rate=1, dtype = tf.float32)(output)
+        output = tf.keras.layers.BatchNormalization()(output)
+        output = tf.keras.layers.ReLU()(output)
+        output = tf.keras.layers.Dropout(conv_dropout)(output) 
+        x = Conv2D(conv_kernels[i] , kernel_size= conv_filters[i] , strides = conv_strides[i] , padding='same' , dilation_rate=1, dtype = tf.float32)(x)
+        x = BatchNormalization()(x)
+        output = tf.keras.layers.add([x , output])
+        output = tf.keras.layers.ReLU()(output)
+        output = tf.keras.layers.Dropout(0.2)(output) 
+        x = output
+    output = SeparableConv2D(1024 , kernel_size= [11,11] , strides = [1,1] , padding='same' , dilation_rate=2, dtype = tf.float32)(output)
     output = tf.keras.layers.BatchNormalization()(output)
     output = tf.keras.layers.ReLU()(output)
-    output = tf.keras.layers.Dropout(0.2)(output)
-    x = output 
-    for j in range(3):        
-        for i in range(len(conv_kernels)):   
-            output = SeparableConv1D(conv_kernels[i] , kernel_size= conv_fillters[i] , strides = 1 , padding='same' , dilation_rate=1, dtype = tf.float32)(output)
-            output = tf.keras.layers.BatchNormalization()(output)
-            output = tf.keras.layers.ReLU()(output)
-            output = tf.keras.layers.Dropout(conv_dropout[i])(output) 
-         output =  SeparableConv1D(conv_kernels[-1] , kernel_size= conv_fillters[-1] , strides = 1 , padding='same' , dilation_rate=1, dtype = tf.float32)(output)
-         output =  BatchNormalization()(output)
-         x = SeparableConv1D(conv_kernels[-1] , kernel_size= conv_fillters[-1] , strides = 1 , padding='same' , dilation_rate=1, dtype = tf.float32)(x)
-         x = BatchNormalization()(x)
-         output = tf.keras.layers.add([x , output])
-         output = tf.keras.layers.ReLU()(output)
-         output = tf.keras.layers.Dropout(0.2)(output) 
-         x = output
-         
+    output = tf.keras.layers.Dropout(0.2)(output)     
     for i in range(5):
         lstm = tf.keras.layers.LSTM(rnn_units , dropout = rnn_dropout ,  return_sequences=True , use_bias=True)
         output = tf.keras.layers.Bidirectional(lstm )(output)
         output = SequenceBatchNorm(time_major=False)(output)
         output = tf.keras.layers.Dropout(fc_dropout)(output)
-    output = SeparableConv1D(896 , kernel_size= 1 , strides = 1 , padding='same' , dilation_rate=2, dtype = tf.float32)(output)
-    output = tf.keras.layers.BatchNormalization()(output)
-    output = tf.keras.layers.ReLU()(output)
-    output = tf.keras.layers.Dropout(0.4)(output)
-    output = tf.keras.layers.Dense(fc_units)(output)
-    
-    output = SeparableConv1D(1024 , kernel_size= 1 , strides = 1 , padding='same' , dilation_rate=1, dtype = tf.float32)(output)
-    output = tf.keras.layers.BatchNormalization()(output)
-    output = tf.keras.layers.ReLU()(output)
-    output = tf.keras.layers.Dropout(0.4)(output)
-    
+        
     output = tf.keras.layers.Dense(fc_units)(output)
     output = tf.keras.layers.BatchNormalization()(output)
     output = tf.keras.layers.ReLU()(output)
