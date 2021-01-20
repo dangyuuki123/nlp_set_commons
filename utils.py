@@ -43,15 +43,15 @@ def get_data_details(filename):
                 result['max_label_length'] = int(row['labels_length'])
             result['num_samples'] += 1
     return result 
-def create_data_generator(directory, max_input_length, max_label_length, batch_size=16):
+def create_data_generator(directory, max_input_length, max_label_length, batch_size=16 , filename):
     x, y, input_lengths, label_lengths = [], [], [], [] 
-    with (open(os.path.join(directory, 'metadata.csv'), 'r')) as metadata:
+    with (open(os.path.join(directory, filename), 'r')) as metadata:
         metadata_reader = csv.DictReader(metadata, fieldnames=['filename', 'spec_length', 'labels_length', 'labels'])
         next(metadata_reader)
         for row in metadata_reader:
-            if(os.path.exists(os.path.join(directory + 'spec/' , row['filename'] +'.npy'))!=1):
+            if(os.path.exists(os.path.join(directory  , row['filename'] +'.npy'))!=1):
                 continue
-            audio = np.load(os.path.join(directory + 'spec/' , row['filename'] +'.npy'))
+            audio = np.load(os.path.join(directory  , row['filename'] +'.npy'))
             x.append(audio)
             #x = np.array(x)
             m = row['labels'].split(' ')
