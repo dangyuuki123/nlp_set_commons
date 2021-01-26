@@ -1,6 +1,6 @@
 preprocessing = {
 
-    'data_dir': 'spec/',
+    'data_dir': '',
     'window_size': 20,
     'step_size': 10,
 
@@ -30,7 +30,7 @@ training = {
     'tensorboard': False,
     'log_dir': './logs',
 
-    'batch_size': 64,
+    'batch_size': 16,
     'epochs': 300,
     'validation_size': 0.2
 
