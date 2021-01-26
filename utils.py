@@ -43,7 +43,7 @@ def get_data_details(filename):
                 result['max_label_length'] = int(row['labels_length'])
             result['num_samples'] += 1
     return result 
-def create_data_generator(directory, max_input_length, max_label_length, batch_size=16 , filename):
+def create_data_generator(directory, max_input_length, max_label_length, batch_size=16 , filename = 'metadata.csv'):
     x, y, input_lengths, label_lengths = [], [], [], [] 
     with (open(os.path.join(directory, filename), 'r')) as metadata:
         metadata_reader = csv.DictReader(metadata, fieldnames=['filename', 'spec_length', 'labels_length', 'labels'])
