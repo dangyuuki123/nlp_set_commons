@@ -30,7 +30,7 @@ training = {
     'tensorboard': False,
     'log_dir': './logs',
 
-    'batch_size': 16,
+    'batch_size': 1,
     'epochs': 300,
     'validation_size': 0.2
 
