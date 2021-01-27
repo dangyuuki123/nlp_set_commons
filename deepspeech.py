@@ -44,15 +44,10 @@ def SpeechModel (model,
     for i in range(len(conv_kernels)):   
         output = Conv2D(conv_kernels[i] , kernel_size= conv_filters[i] , strides =conv_strides[i]  , padding='same' , dilation_rate=1, dtype = tf.float32)(output)
         output = tf.keras.layers.BatchNormalization()(output)
-        output = tf.keras.layers.ReLU()(output)
+        output = tf.keras.layers.LeakyReLU()(output)
         output = tf.keras.layers.Dropout(conv_dropout)(output) 
-        x = SeparableConv2D(conv_kernels[i] , kernel_size= conv_filters[i] , strides = conv_strides[i] , padding='same' , dilation_rate=1, dtype = tf.float32)(x)
-        x = BatchNormalization()(x)
-        output = tf.keras.layers.add([x , output])
-        output = tf.keras.layers.ReLU()(output)
-        output = tf.keras.layers.Dropout(0.1)(output) 
-        x = output
-        output = merge_two_last_dims(output)  
+
+    output = merge_two_last_dims(output)  
     for i in range(5):
         lstm = tf.keras.layers.LSTM(rnn_units , dropout = rnn_dropout ,  return_sequences=True , use_bias=True)
         output = tf.keras.layers.Bidirectional(lstm )(output)
@@ -61,7 +56,7 @@ def SpeechModel (model,
         
     output = tf.keras.layers.Dense(fc_units)(output)
     output = tf.keras.layers.BatchNormalization()(output)
-    output = tf.keras.layers.ReLU()(output)
+    output = tf.keras.layers..LeakyReLU()(output)
     output = tf.keras.layers.Dropout(fc_dropout)(output)
     output = tf.keras.layers.TimeDistributed(tf.keras.layers.Dense(units=vocabulary_size, activation="softmax",
                                     use_bias=True))(output)
