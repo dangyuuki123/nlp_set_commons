@@ -23,11 +23,11 @@ def SpeechModel (model,
 
     vocabulary_size = 95
     conv_type= "conv2d"
-    conv_kernels = [32 , 32 ,96]
-    conv_strides=[[2,2],[1,2],[1,2]]
-    conv_filters=[[41 ,11] , [21 ,11] , [21,11]]
-    conv_dropout=0.3
-    rnn_nlayers= 5
+    conv_kernels = [32 , 32 ,96 , 96 , 192 ]
+    conv_strides=[[2,2],[1,2],[1,2] , [1 ,2] , [1 ,1]]
+    conv_filters=[[41 ,11] , [21 ,11] , [21,11] , [21,11],[11,11]]
+    conv_dropout=0.1
+    rnn_nlayers= 7
     rnn_type= "lstm"
     rnn_units= 1024
     rnn_bidirectional=True
@@ -46,7 +46,12 @@ def SpeechModel (model,
         output = tf.keras.layers.BatchNormalization()(output)
         output = tf.keras.layers.LeakyReLU()(output)
         output = tf.keras.layers.Dropout(conv_dropout)(output) 
-
+        x = Conv2D(conv_kernels[i] , kernel_size= conv_filters[i] , strides =conv_strides[i]  , padding='same' , dilation_rate=1, dtype = tf.float32)(x)
+        x = tf.keras.layers.BatchNormalization()(x)
+        output = tf.keras.layers.add([x , output])
+        output = tf.keras.layers..LeakyReLU()(output)
+        output = tf.keras.layers.Dropout(conv_dropout)(output)
+        x = output
     output = merge_two_last_dims(output)  
     for i in range(5):
         lstm = tf.keras.layers.LSTM(rnn_units , dropout = rnn_dropout ,  return_sequences=True , use_bias=True)
