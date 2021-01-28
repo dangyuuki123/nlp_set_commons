@@ -46,7 +46,7 @@ def SpeechModel (model,
         output = tf.keras.layers.BatchNormalization()(output)
         output = tf.keras.layers.LeakyReLU()(output)
         output = tf.keras.layers.Dropout(conv_dropout)(output) 
-        x = Conv2D(conv_kernels[i] , kernel_size= conv_filters[i] , strides =conv_strides[i]  , padding='same' , dilation_rate=1, dtype = tf.float32)(x)
+        x = Conv2D(conv_kernels[i] , kernel_size= conv_filters[i] , strides =conv_strides[i]  , padding='same' , dilation_rate=2, dtype = tf.float32)(x)
         x = tf.keras.layers.BatchNormalization()(x)
         output = tf.keras.layers.add([x , output])
         output = tf.keras.layers..LeakyReLU()(output)
