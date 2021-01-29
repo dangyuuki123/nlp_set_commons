@@ -30,6 +30,7 @@ class TDNN(_Conv):
                  kernel_initializer='glorot_uniform',
                  bias_initializer='zeros',
                  kernel_regularizer=None,
+                 kernel_size= None , 
                  bias_regularizer=None,
                  activity_regularizer=None,
                  kernel_constraint=None,
@@ -45,7 +46,7 @@ class TDNN(_Conv):
         super(TDNN, self).__init__(
             rank=1,
             filters=filters,
-            kernel_size=(self.input_context[1]-self.input_context[0]+1,),
+            kernel_size=kernel_size,
             strides=strides,
             padding=padding,
             data_format=data_format,
