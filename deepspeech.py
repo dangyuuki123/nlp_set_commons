@@ -4,6 +4,7 @@ from tensorflow.keras.models import*
 from tensorflow.keras.backend import *
 from sequence_wise_bn import SequenceBatchNorm
 import keras
+from TDNN import TDNN
 def shape_list(x):
     """Deal with dynamic shape in tensorflow cleanly."""
     static = x.shape.as_list()
@@ -13,26 +14,12 @@ def shape_list(x):
 def merge_two_last_dims(x):
     b, d, f, c = shape_list(x)
     return tf.reshape(x, shape=[b, -1, f * c])
-class CTCLayer(layers.Layer):
-    def __init__(self, name=None):
-        super().__init__(name=name)
-        self.loss_fn = keras.backend.ctc_batch_cost
+def ctc_lambda_func(args):
 
-    def call(self, y_true, y_pred):
-        # Compute the training-time loss value and add it
-        # to the layer using `self.add_loss()`.
-        batch_len = tf.cast(tf.shape(y_true)[0], dtype="int64")
-        input_length = tf.cast(tf.shape(y_pred)[1], dtype="int64")
-        label_length = tf.cast(tf.shape(y_true)[1], dtype="int64")
+    y_pred, labels, input_length, label_length = args
 
-        input_length = input_length * tf.ones(shape=(batch_len, 1), dtype="int64")
-        label_length = label_length * tf.ones(shape=(batch_len, 1), dtype="int64")
-        print(input_length.shape)
-        loss = self.loss_fn(y_true, y_pred, input_length, label_length)
-        self.add_loss(loss)
+    return tf.keras.backend.ctc_batch_cost(labels, y_pred, input_length, label_length)
 
-        # At test time, just return the computed predictions
-        return y_pred
 def SpeechModel (model,
                  name: str = "deepspeech2"):
         #super(ConvModule, self).__init__(**kwargs)
@@ -64,6 +51,11 @@ def SpeechModel (model,
         output = tf.keras.layers.Dropout(conv_dropout)(output)
         
     output = merge_two_last_dims(output)  
+    for i in range(8):
+        output = TDNN(input_context=[-2,2] , filters=21 , padding = 'same'  , kernel_size= 1024)
+        output = tf.keras.layers.BatchNormalization()(output)
+        output = tf.keras.layers.LeakyReLU()(output)
+        output = tf.keras.layers.Dropout(conv_dropout)(output)
     for i in range(5):
         lstm = tf.keras.layers.LSTM(rnn_units , dropout = rnn_dropout ,  return_sequences=True , use_bias=True)
         output = tf.keras.layers.Bidirectional(lstm )(output)
