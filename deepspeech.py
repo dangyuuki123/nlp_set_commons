@@ -31,8 +31,9 @@ def SpeechModel (model,
     conv_filters=[[41 ,11] , [21 ,11] , [11,11]]
     conv_dropout=0.1
     rnn_nlayers= 5
+    context = [[-2 ,2 ] , [-1,2] ,[-3,3] , [-2,2] , [-1,2] , [-2 , 1 ] , [ -1 , 1 ] , [-3 , 3 ]] 
     rnn_type= "lstm"
-    rnn_units= 512
+    rnn_units= 1024
     rnn_bidirectional=True
     rnn_rowconv=  0
     rnn_dropout= 0.1
@@ -52,7 +53,7 @@ def SpeechModel (model,
         
     output = merge_two_last_dims(output)  
     for i in range(8):
-        output = TDNN(input_context=[-2,2] , filters=21 , padding = 'same'  , kernel_size= 1024)
+        output = TDNN(inputs = output , context = context[i] , layer_name  = 'TDNN' )
         output = tf.keras.layers.BatchNormalization()(output)
         output = tf.keras.layers.LeakyReLU()(output)
         output = tf.keras.layers.Dropout(conv_dropout)(output)
@@ -64,7 +65,7 @@ def SpeechModel (model,
         
     output = tf.keras.layers.Dense(fc_units)(output)
     output = tf.keras.layers.BatchNormalization()(output)
-    output = tf.keras.layers..LeakyReLU()(output)
+    output = tf.keras.layers.LeakyReLU()(output)
     output = tf.keras.layers.Dropout(fc_dropout)(output)
     output = tf.keras.layers.TimeDistributed(tf.keras.layers.Dense(units=vocabulary_size, activation="softmax",
                                     use_bias=True))(output)
