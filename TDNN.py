@@ -1,109 +1,159 @@
-from keras import backend as K
-from keras.engine.base_layer import Layer, InputSpec
-from keras import activations
-from keras.layers.convolutional import _Conv
+import tensorflow as tf
 import numpy as np
 
-class TDNN(_Conv):
-    # Original TDNN
-    # A. Waibel, T. Hanazawa, G. Hinton, K. Shikano and K. J. Lang,
-    # "Phoneme recognition using time-delay neural networks,"
-    # IEEE Transactions on Acoustics, Speech, and Signal Processing,
-    # vol. 37, no. 3, pp. 328-339, March 1989.
-    
-    # Architecture implemented in this Layer
-    # Peddinti, Vijayaditya et al.
-    # "A time delay neural network architecture
-    # for efficient modeling of long temporal contexts."
-    # INTERSPEECH (2015).
 
-    def __init__(self,
-                 input_context,
-                 sub_sampling=False,
-                 filters=1,
-                 strides=1,
-                 padding='valid',
-                 data_format='channels_last',
-                 dilation_rate=1,
-                 activation=None,
-                 use_bias=True,
-                 kernel_initializer='glorot_uniform',
-                 bias_initializer='zeros',
-                 kernel_regularizer=None,
-                 kernel_size= None , 
-                 bias_regularizer=None,
-                 activity_regularizer=None,
-                 kernel_constraint=None,
-                 bias_constraint=None,
-                 **kwargs):
-        if padding == 'causal':
-            if data_format != 'channels_last':
-                raise ValueError('When using causal padding in `Conv1D`, '
-                                 '`data_format` must be "channels_last" '
-                                 '(temporal data).')
-        self.input_context = input_context
-        self.sub_sampling = sub_sampling
-        super(TDNN, self).__init__(
-            rank=1,
-            filters=filters,
-            kernel_size=kernel_size,
-            strides=strides,
-            padding=padding,
-            data_format=data_format,
-            dilation_rate=dilation_rate,
-            activation=activation,
-            use_bias=use_bias,
-            kernel_initializer=kernel_initializer,
-            bias_initializer=bias_initializer,
-            kernel_regularizer=kernel_regularizer,
-            bias_regularizer=bias_regularizer,
-            activity_regularizer=activity_regularizer,
-            kernel_constraint=kernel_constraint,
-            bias_constraint=bias_constraint,
-            **kwargs)
-    
-    def build(self, input_shape):
-        if self.data_format == 'channels_first':
-            channel_axis = 1
-        else:
-            channel_axis = -1
-        if input_shape[channel_axis] is None:
-            raise ValueError('The channel dimension of the inputs '
-                             'should be defined. Found `None`.')
-        input_dim = input_shape[channel_axis]
-        kernel_shape = self.kernel_size + (input_dim, self.filters)
+def renorm_layer(
+        inputs,
+        input_dim
+        ):
+    #
+    # original code from Kaldi's NormalizeComponent
+    # y = x * (sqrt(dim(x)) * target-rms) / |x|
+    # for details, http://kaldi-asr.org/doc/nnet-normalize-component_8h_source.html
+    #
 
-        self.kernel = self.add_weight(shape=kernel_shape,
-                                      initializer=self.kernel_initializer,
-                                      name='kernel',
-                                      regularizer=self.kernel_regularizer,
-                                      constraint=self.kernel_constraint)
-        if self.use_bias:
-            self.bias = self.add_weight(shape=(self.filters,),
-                                        initializer=self.bias_initializer,
-                                        name='bias',
-                                        regularizer=self.bias_regularizer,
-                                        constraint=self.bias_constraint)
-        else:
-            self.bias = None
-        if self.sub_sampling:
-            self.mask = np.zeros(kernel_shape)
-            self.mask[0][0] = 1
-            self.mask[self.input_context[1]-self.input_context[0]][0] = 1
-        else:
-            self.mask = None
-        # Set input spec.
-        self.input_spec = InputSpec(ndim=self.rank + 2,
-                                    axes={channel_axis: input_dim})
-        self.built = True
+    sqrt_output_dim = tf.sqrt(x = float(input_dim))
 
-    def call(self, inputs):
-        if self.sub_sampling:
-            self.kernel *= self.mask
-        return super(TDNN, self).call(inputs)
+    norm = tf.cast(
+            x = tf.reciprocal(
+                x = tf.norm(
+                    tensor = inputs,
+                    ord = 2,
+                    axis = 2
+                    )
+                ),
+            dtype = tf.float32
+            )
+    norm = tf.expand_dims(
+            input = norm,
+            axis = 2
+            )
+    # norm.shape: [batch_size, sequence_length, input_dim]
+
+    sqrt_output_dims_mat = tf.reshape(
+            tensor = sqrt_output_dim,
+            shape = [1, 1]
+            )
+    sqrt_output_dims_mat = tf.multiply(
+            x = norm,
+            y = sqrt_output_dims_mat
+            )
+
+    scale_value = tf.multiply(
+            x = inputs,
+            y = sqrt_output_dims_mat
+            )
+
+    return scale_value
 
 
-    def get_config(self):
-        config = super(TDNN, self).get_config()
-        config.pop('rank')
-        return config
+def tdnn(
+        inputs, # [batch_size, sequence_length, feature_dims]
+        context : list,
+        output_dim : int,
+        layer_name : str,
+        input_dim : int = None,
+        full_context = False,
+        pnorm_name : str = None,
+        renorm_name : str = None,
+        weights = None,
+        use_bias : bool = True,
+        bias = None,
+        trainable : bool = True
+        ):
+    #
+    # the original code from https://github.com/SiddGururani/Pytorch-TDNN
+    #
+
+    def check_valid_context(context : list):
+        assert context[0] <= context[-1], \
+                "Input tensor dimensionality is incorrect. Should be a 3D tensor"
+
+
+    def get_kernel_width(context : list, full_context : bool):
+        if full_context:
+            context = list(range(context[0], context[-1] + 1))
+        return len(context), context
+
+
+    def get_valid_steps(context : list, input_sequence_length : int):
+        start = 0 if context[0] >= 0 else  -1 * context[0]
+        end = input_sequence_length if context[-1] <= 0 else input_sequence_length - context[-1]
+        return tf.range(start=start, limit=end)
+
+
+    def is_full_context(context : list):
+        for idx, c in enumerate(context):
+            try:
+                if c + 1 != context[idx + 1]:
+                    return False
+            except IndexError:
+                return True
+
+
+    input_shape = tf.shape(inputs)
+    sequence_length = input_shape[1]
+    check_valid_context(context)
+    kernel_width, context = get_kernel_width(context, full_context)
+    valid_steps = get_valid_steps(context, sequence_length)
+
+    context = [context] * 1
+    context = tf.tile(input = context, multiples = [tf.size(valid_steps), 1])
+    valid_steps = tf.expand_dims(valid_steps, 1)
+
+    selected_indices = context + valid_steps
+
+    # features.shape: [batch, sequence_length_of_output, kernel, feats_dims]
+    # reshape -> [batch, sequence_length_of_output, kernel * feats_dims]
+    # e.g.,   -> [batch, length, channels]
+    features = tf.gather(
+            params = inputs,
+            indices = selected_indices,
+            axis = 1
+            )
+    f_shape = tf.shape(features)
+    features = tf.reshape(
+            tensor = features,
+            shape = [f_shape[0], f_shape[1], -1]
+            )
+
+    if not weights:
+        weights = tf.contrib.layers.xavier_initializer()
+
+    #regularizer = None if not trainable else \
+    #        tf.contrib.layers.l2_regularizer(scale = 0.01)
+
+    out = tf.layers.conv1d(
+            inputs = features,
+            filters = output_dim,
+            kernel_size = 1,
+            strides = 1,
+            data_format = "channels_last",
+            use_bias = use_bias,
+            name = layer_name,
+            kernel_initializer = weights,
+            kernel_regularizer = None,
+            bias_initializer = bias,
+            trainable = trainable
+            )
+
+    if pnorm_name:
+        out_shape = tf.shape(out)
+        out = tf.reshape(
+                tensor = out,
+                shape = [out_shape[0], out_shape[1], input_dim, -1]
+                )
+        out = tf.norm(
+                tensor = out,
+                ord = 2,
+                axis = 3,
+                name = pnorm_name
+                )
+
+    if renorm_name:
+        out = renorm_layer(
+                inputs = out,
+                input_dim = input_dim
+                )
+
+    return out
