@@ -4,7 +4,7 @@ from tensorflow.keras.models import*
 from tensorflow.keras.backend import *
 from sequence_wise_bn import SequenceBatchNorm
 import keras
-from TDNN import TDNN
+
 def shape_list(x):
     """Deal with dynamic shape in tensorflow cleanly."""
     static = x.shape.as_list()
@@ -31,7 +31,10 @@ def SpeechModel (model,
     conv_filters=[[41 ,11] , [21 ,11] , [11,11]]
     conv_dropout=0.1
     rnn_nlayers= 5
-    context = [[-2 ,2 ] , [-1,2] ,[-3,3] , [-2,2] , [-1,2] , [-2 , 1 ] , [ -1 , 1 ] , [-3 , 3 ]] 
+    nsubblocks =  8,
+    block_channels = [256, 384, 512, 640, 768]
+    block_kernels= [11, 13, 17, 21, 25]
+    block_dropout = 0.1
     rnn_type= "lstm"
     rnn_units= 1024
     rnn_bidirectional=True
@@ -41,23 +44,41 @@ def SpeechModel (model,
     fc_units= 1024
     fc_dropout=  0.1
     assert len(conv_kernels) == len(conv_strides) == len(conv_filters)
+    x = []
     #assert dropout >= 0.0 
     input_ = tf.keras.Input(name = 'inputs' , shape = (model['max_input_length'] , 80 , 1 ))
     output = input_
-    x = output
+    
     for i in range(len(conv_kernels)):   
         output = Conv2D(conv_kernels[i] , kernel_size= conv_filters[i] , strides =conv_strides[i]  , padding='same' , dilation_rate=1, dtype = tf.float32)(output)
         output = tf.keras.layers.BatchNormalization()(output)
         output = tf.keras.layers.LeakyReLU()(output)
         output = tf.keras.layers.Dropout(conv_dropout)(output)
         
-    output = merge_two_last_dims(output)  
-    for i in range(8):
-        output = TDNN(inputs = output , context = context[i] , layer_name  = 'TDNN' )
-        output = tf.keras.layers.BatchNormalization()(output)
+    output = merge_two_last_dims(output)
+    output = tf.keras.layers.Dense(1024  ,activation='sigmoid')(output)
+    output = tf.keras.layers.BatchNormalization()(output)
+    output = tf.keras.layers.Dense(1024  ,activation='sigmoid')(output)
+    output = tf.keras.layers.BatchNormalization()(output)
+    output = tf.keras.layers.Dense(1024  ,activation='sigmoid')(output)
+    output = tf.keras.layers.BatchNormalization()(output)
+    x.append(output)
+    for j in range(nsubblocks):
+        xs
+        for i in range(5):
+            
+            output = Con1D(block_channels[i] , kernel_size= block_kernels[i] , strides =1  , padding='same' , dilation_rate=1, dtype = tf.float32)(output)
+            output = tf.keras.layers.BatchNormalization()(output)
+            output = tf.keras.layers.LeakyReLU()(output)
+            output = tf.keras.layers.Dropout(block_dropout)(output)
+        for k in range(len(x)):
+            x[j] = Con1D(block_channels[-1] , kernel_size= block_kernels[-1] , strides =1  , padding='same' , dilation_rate=1, dtype = tf.float32)(x[j])
+            x[j] = tf.keras.layers.BatchNormalization()(x[j])
+            output = tf.add(x[j] , output)
+        x.append(output)
         output = tf.keras.layers.LeakyReLU()(output)
-        output = tf.keras.layers.Dropout(conv_dropout)(output)
-    for i in range(5):
+        output = tf.keras.layers.Dropout(0.1)(output)
+    for i in range(8):
         lstm = tf.keras.layers.LSTM(rnn_units , dropout = rnn_dropout ,  return_sequences=True , use_bias=True)
         output = tf.keras.layers.Bidirectional(lstm )(output)
         output = SequenceBatchNorm(time_major=False)(output)
