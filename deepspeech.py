@@ -31,7 +31,7 @@ def SpeechModel (model,
     conv_filters=[[41 ,11] , [21 ,11] , [11,11]]
     conv_dropout=0.1
     rnn_nlayers= 5
-    nsubblocks =  8,
+    nsubblocks =  8
     block_channels = [256, 384, 512, 640, 768]
     block_kernels= [11, 13, 17, 21, 25]
     block_dropout = 0.1
@@ -64,15 +64,14 @@ def SpeechModel (model,
     output = tf.keras.layers.BatchNormalization()(output)
     x.append(output)
     for j in range(nsubblocks):
-        xs
         for i in range(5):
             
-            output = Con1D(block_channels[i] , kernel_size= block_kernels[i] , strides =1  , padding='same' , dilation_rate=1, dtype = tf.float32)(output)
+            output = Conv1D(block_channels[i] , kernel_size= block_kernels[i] , strides =1  , padding='same' , dilation_rate=1, dtype = tf.float32)(output)
             output = tf.keras.layers.BatchNormalization()(output)
             output = tf.keras.layers.LeakyReLU()(output)
             output = tf.keras.layers.Dropout(block_dropout)(output)
         for k in range(len(x)):
-            x[j] = Con1D(block_channels[-1] , kernel_size= block_kernels[-1] , strides =1  , padding='same' , dilation_rate=1, dtype = tf.float32)(x[j])
+            x[j] = Conv1D(block_channels[-1] , kernel_size= block_kernels[-1] , strides =1  , padding='same' , dilation_rate=1, dtype = tf.float32)(x[j])
             x[j] = tf.keras.layers.BatchNormalization()(x[j])
             output = tf.add(x[j] , output)
         x.append(output)
@@ -98,5 +97,6 @@ def SpeechModel (model,
                       name='ctc')([output, labels, input_length, label_length])
     return tf.keras.Model(inputs=[input_, labels, input_length, label_length], outputs=[loss_out]) , tf.keras.Model(inputs=input_ , outputs=output)
             
+        
         
             
