@@ -56,12 +56,7 @@ def SpeechModel (model,
         output = tf.keras.layers.Dropout(conv_dropout)(output)
         
     output = merge_two_last_dims(output)
-    output = tf.keras.layers.Dense(1024  ,activation='sigmoid')(output)
-    output = tf.keras.layers.BatchNormalization()(output)
-    output = tf.keras.layers.Dense(1024  ,activation='sigmoid')(output)
-    output = tf.keras.layers.BatchNormalization()(output)
-    output = tf.keras.layers.Dense(1024  ,activation='sigmoid')(output)
-    output = tf.keras.layers.BatchNormalization()(output)
+    
     x.append(output)
     for j in range(nsubblocks):
         for i in range(5):
@@ -77,16 +72,16 @@ def SpeechModel (model,
         x.append(output)
         output = tf.keras.layers.LeakyReLU()(output)
         output = tf.keras.layers.Dropout(0.1)(output)
-    for i in range(8):
+    for i in range(5):
         lstm = tf.keras.layers.LSTM(rnn_units , dropout = rnn_dropout ,  return_sequences=True , use_bias=True)
         output = tf.keras.layers.Bidirectional(lstm )(output)
         output = SequenceBatchNorm(time_major=False)(output)
         output = tf.keras.layers.Dropout(fc_dropout)(output)
         
-    output = tf.keras.layers.Dense(fc_units)(output)
+    output = tf.keras.layers.TimeDistributed(tf.keras.layers.Dense(fc_units))(output)
     output = tf.keras.layers.BatchNormalization()(output)
     output = tf.keras.layers.LeakyReLU()(output)
-    output = tf.keras.layers.Dropout(fc_dropout)(output)
+    output = tf.keras.layers.TimeDistributed(tf.keras.layers.Dropout(fc_dropout))(output)
     output = tf.keras.layers.TimeDistributed(tf.keras.layers.Dense(units=vocabulary_size, activation="softmax",
                                     use_bias=True))(output)
     labels = Input(name='labels', shape=model['max_label_length'], dtype='int64')
