@@ -4,7 +4,7 @@ from keras.engine.topology import Layer
 import numpy as np
 import tensorflow as tf
 
-from tensorflow_hmm import HMMTensorflow
+from hmm import HMMTensorflow
 
 
 class HMMLayer(Layer):
