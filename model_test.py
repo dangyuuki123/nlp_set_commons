@@ -56,7 +56,7 @@ def SpeechModel (model,
         output = tf.keras.layers.Dropout(conv_dropout)(output)
         
     output = merge_two_last_dims(output)
-    
+    output = tf.keras.layers.Masking()(output)
     x.append(output)
     for j in range(nsubblocks):
         for i in range(5):
