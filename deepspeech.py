@@ -29,12 +29,12 @@ def SpeechModel (model,
     conv_kernels = [32 , 32 ,96  ]
     conv_strides=[[2,2],[1,2],[1,2] ]
     conv_filters=[[41 ,11] , [21 ,11] , [11,11]]
-    conv_dropout=0.1
+    conv_dropout=0.5
     rnn_nlayers= 5
-    nsubblocks =  8
+    nsubblocks =  3
     block_channels = [256, 384, 512, 640, 768]
     block_kernels= [11, 13, 17, 21, 25]
-    block_dropout = 0.1
+    block_dropout = 0.2
     rnn_type= "lstm"
     rnn_units= 1024
     rnn_bidirectional=True
@@ -46,7 +46,7 @@ def SpeechModel (model,
     assert len(conv_kernels) == len(conv_strides) == len(conv_filters)
     x = []
     #assert dropout >= 0.0 
-    input_ = tf.keras.Input(name = 'inputs' , shape = (model['max_input_length'] , 80 , 1 ))
+    input_ = tf.keras.Input(name = 'inputs' , shape = (model['max_input_length'] , 161 , 1 ))
     output = input_
     
     for i in range(len(conv_kernels)):   
@@ -72,7 +72,7 @@ def SpeechModel (model,
         x.append(output)
         output = tf.keras.layers.LeakyReLU()(output)
         output = tf.keras.layers.Dropout(0.1)(output)
-    for i in range(5):
+    for i in range(3):
         lstm = tf.keras.layers.LSTM(rnn_units , dropout = rnn_dropout ,  return_sequences=True , use_bias=True)
         output = tf.keras.layers.Bidirectional(lstm )(output)
         output = SequenceBatchNorm(time_major=False)(output)
