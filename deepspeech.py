@@ -41,7 +41,7 @@ def SpeechModel (model,
     rnn_rowconv=  0
     rnn_dropout= 0.1
     fc_nlayers=  0
-    fc_units= 1024
+    fc_units= 1600
     fc_dropout=  0.1
     assert len(conv_kernels) == len(conv_strides) == len(conv_filters)
     x = []
