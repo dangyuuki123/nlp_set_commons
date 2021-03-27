@@ -57,6 +57,8 @@ def SpeechModel (model,
         
     output = merge_two_last_dims(output)
     
+    output = keras.layers.Masking()(output)
+    
     x.append(output)
     for j in range(nsubblocks):
         for i in range(5):
