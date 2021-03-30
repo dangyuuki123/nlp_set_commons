@@ -39,7 +39,7 @@ def SpeechModel (model,
     rnn_units= 1024
     rnn_bidirectional=True
     rnn_rowconv=  0
-    rnn_dropout= 0.1
+    rnn_dropout= 0.0
     fc_nlayers=  0
     fc_units= 1600
     fc_dropout=  0.1
@@ -62,6 +62,7 @@ def SpeechModel (model,
     x.append(output)
     output = tf.keras.layers.TimeDistributed(tf.keras.layers.Dense(fc_units))(output)
     output = tf.keras.layers.LeakyReLU()(output)
+    #output = tf.keras.layers.ZeroPadding1D(padding=(0, 1711))(output)
     for j in range(nsubblocks):
         for i in range(5):
             
