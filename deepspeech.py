@@ -60,6 +60,8 @@ def SpeechModel (model,
     #output = keras.layers.Masking()(output)
     
     x.append(output)
+    output = tf.keras.layers.TimeDistributed(tf.keras.layers.Dense(fc_units))(output)
+    output = tf.keras.layers.LeakyReLU()(output)
     for j in range(nsubblocks):
         for i in range(5):
             
