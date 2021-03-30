@@ -57,7 +57,7 @@ def SpeechModel (model,
         
     output = merge_two_last_dims(output)
     
-    output = keras.layers.Masking()(output)
+    #output = keras.layers.Masking()(output)
     
     x.append(output)
     for j in range(nsubblocks):
@@ -85,7 +85,7 @@ def SpeechModel (model,
     output = tf.keras.layers.LeakyReLU()(output)
     output = tf.keras.layers.TimeDistributed(tf.keras.layers.Dropout(fc_dropout))(output)
     output = tf.keras.layers.TimeDistributed(tf.keras.layers.Dense(units=vocabulary_size, activation="softmax",
-                                    use_bias=True ,  kernel_regularizer = keras.regularizers.l2(l2 = 0.0005)))(output)
+                                    use_bias=True ))(output)
     labels = Input(name='labels', shape=model['max_label_length'], dtype='int64')
     input_length = Input(name='input_lengths', shape=[1], dtype='int64')
     label_length = Input(name='label_lengths', shape=[1], dtype='int64')
