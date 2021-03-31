@@ -28,10 +28,10 @@ def SpeechModel (model,
     conv_type= "conv2d"
     conv_kernels = [32 , 32 ,96  ]
     conv_strides=[[2,2],[1,2],[1,2] ]
-    conv_filters=[[41 ,11] , [21 ,11] , [11,11]]
+    conv_filters=[[11,41] , [11,21] , [11,21]]
     conv_dropout=0.5
     rnn_nlayers= 5
-    nsubblocks =  3
+    nsubblocks =  2
     block_channels = [256, 384, 512, 640, 768]
     block_kernels= [11, 13, 17, 21, 25]
     block_dropout = 0.2
@@ -77,7 +77,7 @@ def SpeechModel (model,
         x.append(output)
         output = tf.keras.layers.LeakyReLU()(output)
         output = tf.keras.layers.Dropout(0.1)(output)
-    for i in range(3):
+    for i in range(4):
         lstm = tf.keras.layers.LSTM(rnn_units , dropout = rnn_dropout ,  return_sequences=True , use_bias=True)
         output = tf.keras.layers.Bidirectional(lstm )(output)
         output = SequenceBatchNorm(time_major=False)(output)
