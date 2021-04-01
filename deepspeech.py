@@ -31,7 +31,7 @@ def SpeechModel (model,
     conv_filters=[[11,41] , [11,21] , [11,21]]
     conv_dropout=0.5
     rnn_nlayers= 5
-    nsubblocks =  2
+    nsubblocks =  3
     block_channels = [256, 384, 512, 640, 768]
     block_kernels= [11, 13, 17, 21, 25]
     block_dropout = 0.2
