@@ -5,6 +5,9 @@ from tensorflow.keras.backend import *
 from sequence_wise_bn import SequenceBatchNorm
 import keras
 
+_BATCH_NORM_EPSILON = 1e-5
+_BATCH_NORM_DECAY = 0.997
+
 def shape_list(x):
     """Deal with dynamic shape in tensorflow cleanly."""
     static = x.shape.as_list()
@@ -17,8 +20,8 @@ def merge_two_last_dims(x):
 def ctc_lambda_func(args):
 
     y_pred, labels, input_length, label_length = args
-
-    return tf.keras.backend.ctc_batch_cost(labels, y_pred, input_length, label_length)
+    input_length = input_length //2
+    return tf.reduce_mean(tf.keras.backend.ctc_batch_cost(labels, y_pred, input_length, label_length))
 
 def SpeechModel (model,
                  name: str = "deepspeech2"):
@@ -31,7 +34,7 @@ def SpeechModel (model,
     conv_filters=[[11,41] , [11,21] , [11,21]]
     conv_dropout=0.5
     rnn_nlayers= 5
-    nsubblocks =  3
+    nsubblocks =  2
     block_channels = [256, 384, 512, 640, 768]
     block_kernels= [11, 13, 17, 21, 25]
     block_dropout = 0.2
@@ -78,10 +81,11 @@ def SpeechModel (model,
         output = tf.keras.layers.LeakyReLU()(output)
         output = tf.keras.layers.Dropout(0.1)(output)
     for i in range(4):
+        output = tf.keras.layers.BatchNormalization(
+        momentum=_BATCH_NORM_DECAY, epsilon=_BATCH_NORM_EPSILON)(output)
         lstm = tf.keras.layers.LSTM(rnn_units , dropout = rnn_dropout ,  return_sequences=True , use_bias=True)
         output = tf.keras.layers.Bidirectional(lstm )(output)
-        output = SequenceBatchNorm(time_major=False)(output)
-        output = tf.keras.layers.Dropout(fc_dropout)(output)
+        
         
     output = tf.keras.layers.TimeDistributed(tf.keras.layers.Dense(fc_units))(output)
     output = tf.keras.layers.BatchNormalization()(output)
