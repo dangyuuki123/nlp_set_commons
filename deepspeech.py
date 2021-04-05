@@ -35,6 +35,7 @@ def SpeechModel (model,
     conv_dropout=0.5
     rnn_nlayers= 5
     nsubblocks =  2
+    padding = [[5,20] , [5,10] ,[5,10]]
     block_channels = [256, 384, 512, 640, 768]
     block_kernels= [11, 13, 17, 21, 25]
     block_dropout = 0.2
@@ -52,9 +53,13 @@ def SpeechModel (model,
     input_ = tf.keras.Input(name = 'inputs' , shape = (model['max_input_length'] , 161 , 1 ))
     output = input_
     
-    for i in range(len(conv_kernels)):   
-        output = Conv2D(conv_kernels[i] , kernel_size= conv_filters[i] , strides =conv_strides[i]  , padding='same' , dilation_rate=1, dtype = tf.float32)(output)
-        output = tf.keras.layers.BatchNormalization()(output)
+    for i in range(len(conv_kernels)): 
+        output =tf.pad(
+        output,
+        [[0, 0], [padding[i][0], padding[i][0]], [padding[i][1], padding[i][1]], [0, 0]])  
+        output = Conv2D(conv_kernels[i] , kernel_size= conv_filters[i] , strides =conv_strides[i]  , padding='same' , dilation_rate=1, dtype = tf.float32 ,  kernel_regularizer=regularizers.l2( l2=0.0005))(output)
+        output = tf.keras.layers.BatchNormalization(
+        momentum=_BATCH_NORM_DECAY, epsilon=_BATCH_NORM_EPSILON)(output)
         output = tf.keras.layers.LeakyReLU()(output)
         output = tf.keras.layers.Dropout(conv_dropout)(output)
         
@@ -63,18 +68,18 @@ def SpeechModel (model,
     #output = keras.layers.Masking()(output)
     
     x.append(output)
-    output = tf.keras.layers.TimeDistributed(tf.keras.layers.Dense(fc_units))(output)
+    output = tf.keras.layers.Dense(fc_units, kernel_regularizer=regularizers.l2( l2=0.0005))(output)
     output = tf.keras.layers.LeakyReLU()(output)
     #output = tf.keras.layers.ZeroPadding1D(padding=(0, 1711))(output)
     for j in range(nsubblocks):
         for i in range(5):
             
-            output = Conv1D(block_channels[i] , kernel_size= block_kernels[i] , strides =1  , padding='same' , dilation_rate=1, dtype = tf.float32)(output)
+            output = Conv1D(block_channels[i] , kernel_size= block_kernels[i] , strides =1  , padding='same' , dilation_rate=1, dtype = tf.float32,  kernel_regularizer=regularizers.l2( l2=0.0005))(output)
             output = tf.keras.layers.BatchNormalization()(output)
             output = tf.keras.layers.LeakyReLU()(output)
             output = tf.keras.layers.Dropout(block_dropout)(output)
         for k in range(len(x)):
-            x[j] = Conv1D(block_channels[-1] , kernel_size= block_kernels[-1] , strides =1  , padding='same' , dilation_rate=1, dtype = tf.float32)(x[j])
+            x[j] = Conv1D(block_channels[-1] , kernel_size= block_kernels[-1] , strides =1  , padding='same' , dilation_rate=1, dtype = tf.float32 ,  kernel_regularizer=regularizers.l2( l2=0.0005))(x[j])
             x[j] = tf.keras.layers.BatchNormalization()(x[j])
             output = tf.add(x[j] , output)
         x.append(output)
