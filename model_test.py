@@ -7,7 +7,7 @@ import keras
 
 _BATCH_NORM_EPSILON = 1e-5
 _BATCH_NORM_DECAY = 0.997
- 
+
 def shape_list(x):
     """Deal with dynamic shape in tensorflow cleanly."""
     static = x.shape.as_list()
@@ -16,15 +16,11 @@ def shape_list(x):
 
 def merge_two_last_dims(x):
     b, d, f, c = shape_list(x)
-    return tf.reshape(x, shape=[b, -1, f * c])  , d 
-def compute_length_after_conv(max_time_steps, ctc_time_steps, input_length):
-  ctc_input_length = tf.cast(tf.multiply(
-      input_length, ctc_time_steps), dtype=tf.float32)
-  return tf.cast(tf.math.floordiv(
-      ctc_input_length, tf.cast(max_time_steps, dtype=tf.float32)), dtype=tf.int32)
-def ctc_lambda_func(args ):
+    return tf.reshape(x, shape=[b, -1, f * c])
+def ctc_lambda_func(args):
 
     y_pred, labels, input_length, label_length = args
+    input_length = input_length //2
     return tf.reduce_mean(tf.keras.backend.ctc_batch_cost(labels, y_pred, input_length, label_length))
 
 def SpeechModel (model,
@@ -39,7 +35,7 @@ def SpeechModel (model,
     conv_dropout=0.5
     rnn_nlayers= 5
     nsubblocks =  2
-    padding = [[20,5] , [10,5] ,[10,5]]
+    padding = [[5,20] , [5,10] ,[5,10]]
     block_channels = [256, 384, 512, 640, 768]
     block_kernels= [11, 13, 17, 21, 25]
     block_dropout = 0.2
@@ -54,38 +50,39 @@ def SpeechModel (model,
     assert len(conv_kernels) == len(conv_strides) == len(conv_filters)
     x = []
     #assert dropout >= 0.0 
-    
     input_ = tf.keras.Input(name = 'inputs' , shape = (model['max_input_length'] , 161 , 1 ))
     output = input_
     
-    for i in range(len(conv_kernels)):
+    for i in range(len(conv_kernels)): 
         output =tf.pad(
         output,
-        [[0, 0], [padding[i][0], padding[i][0]], [padding[i][1], padding[i][1]], [0, 0]])    
-        output = Conv2D(conv_kernels[i] , kernel_size= conv_filters[i] , strides =conv_strides[i]  , padding='valid' , dilation_rate=1, dtype = tf.float32)(output)
+        [[0, 0], [padding[i][0], padding[i][0]], [padding[i][1], padding[i][1]], [0, 0]])  
+        output = Conv2D(conv_kernels[i] , kernel_size= conv_filters[i] , strides =conv_strides[i]  , padding='same' , dilation_rate=1, dtype = tf.float32 )(output)
         output = tf.keras.layers.BatchNormalization(
         momentum=_BATCH_NORM_DECAY, epsilon=_BATCH_NORM_EPSILON)(output)
         output = tf.keras.layers.LeakyReLU()(output)
         output = tf.keras.layers.Dropout(conv_dropout)(output)
         
-    output ,length  = merge_two_last_dims(output)
+    output = merge_two_last_dims(output)
     
     #output = keras.layers.Masking()(output)
     
     x.append(output)
-    output = tf.keras.layers.TimeDistributed(tf.keras.layers.Dense(fc_units))(output)
+    output = tf.keras.layers.Dense(fc_units )(output)
     output = tf.keras.layers.LeakyReLU()(output)
     #output = tf.keras.layers.ZeroPadding1D(padding=(0, 1711))(output)
     for j in range(nsubblocks):
         for i in range(5):
             
-            output = Conv1D(block_channels[i] , kernel_size= block_kernels[i] , strides =1  ,  padding='valid' , dilation_rate=1, dtype = tf.float32)(output)
-            output = tf.keras.layers.BatchNormalization()(output)
+            output = Conv1D(block_channels[i] , kernel_size= block_kernels[i] , strides =1  , padding='same' , dilation_rate=1, dtype = tf.float32)(output)
+            output = tf.keras.layers.BatchNormalization(
+        momentum=_BATCH_NORM_DECAY, epsilon=_BATCH_NORM_EPSILON)(output)
             output = tf.keras.layers.LeakyReLU()(output)
             output = tf.keras.layers.Dropout(block_dropout)(output)
         for k in range(len(x)):
-            x[j] = Conv1D(block_channels[-1] , kernel_size= block_kernels[-1] , strides =1  ,  padding='valid' , dilation_rate=1, dtype = tf.float32)(x[j])
-            x[j] = tf.keras.layers.BatchNormalization()(x[j])
+            x[j] = Conv1D(block_channels[-1] , kernel_size= block_kernels[-1] , strides =1  , padding='same' , dilation_rate=1, dtype = tf.float32)(x[j])
+            x[j] = tf.keras.layers.BatchNormalization(
+        momentum=_BATCH_NORM_DECAY, epsilon=_BATCH_NORM_EPSILON)(x[j])
             output = tf.add(x[j] , output)
         x.append(output)
         output = tf.keras.layers.LeakyReLU()(output)
@@ -98,7 +95,8 @@ def SpeechModel (model,
         
         
     output = tf.keras.layers.TimeDistributed(tf.keras.layers.Dense(fc_units))(output)
-    output = tf.keras.layers.BatchNormalization()(output)
+    output = tf.keras.layers.BatchNormalization(
+        momentum=_BATCH_NORM_DECAY, epsilon=_BATCH_NORM_EPSILON)(output)
     output = tf.keras.layers.LeakyReLU()(output)
     output = tf.keras.layers.TimeDistributed(tf.keras.layers.Dropout(fc_dropout))(output)
     output = tf.keras.layers.TimeDistributed(tf.keras.layers.Dense(units=vocabulary_size, activation="softmax",
@@ -106,7 +104,7 @@ def SpeechModel (model,
     labels = Input(name='labels', shape=model['max_label_length'], dtype='int64')
     input_length = Input(name='input_lengths', shape=[1], dtype='int64')
     label_length = Input(name='label_lengths', shape=[1], dtype='int64')
-    input_length = length 
+
     loss_out = Lambda(ctc_lambda_func, output_shape=(1,),
                       name='ctc')([output, labels, input_length, label_length])
     return tf.keras.Model(inputs=[input_, labels, input_length, label_length], outputs=[loss_out]) , tf.keras.Model(inputs=input_ , outputs=output)
