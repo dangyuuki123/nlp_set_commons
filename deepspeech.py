@@ -63,41 +63,50 @@ def SpeechModel (model,
         output = tf.keras.layers.LeakyReLU()(output)
         output = tf.keras.layers.Dropout(conv_dropout)(output)
         
-    output = merge_two_last_dims(output)
+    batch_size = tf.shape(output)[0]
+    feat_size = output.get_shape().as_list()[2]
+    tail = output.get_shape().as_list()[3]
+    output = tf.reshape(
+        output,
+        [batch_size , -1 , feat_size * tail]
+    )
     
-    #output = keras.layers.Masking()(output)
+    output = keras.layers.Masking()(output)
     
     x.append(output)
-    output = tf.keras.layers.Dense(fc_units, kernel_regularizer=regularizers.l2( l2=0.0005))(output)
+    output = tf.keras.layers.Dense(fc_units)(output)
     output = tf.keras.layers.LeakyReLU()(output)
     #output = tf.keras.layers.ZeroPadding1D(padding=(0, 1711))(output)
     for j in range(nsubblocks):
         for i in range(5):
             
             output = Conv1D(block_channels[i] , kernel_size= block_kernels[i] , strides =1  , padding='same' , dilation_rate=1, dtype = tf.float32)(output)
-            output = tf.keras.layers.BatchNormalization()(output)
+            output = tf.keras.layers.BatchNormalization(
+        momentum=_BATCH_NORM_DECAY, epsilon=_BATCH_NORM_EPSILON)(output)
             output = tf.keras.layers.LeakyReLU()(output)
             output = tf.keras.layers.Dropout(block_dropout)(output)
         for k in range(len(x)):
             x[j] = Conv1D(block_channels[-1] , kernel_size= block_kernels[-1] , strides =1  , padding='same' , dilation_rate=1, dtype = tf.float32)(x[j])
-            x[j] = tf.keras.layers.BatchNormalization()(x[j])
+            x[j] = tf.keras.layers.BatchNormalization(
+        momentum=_BATCH_NORM_DECAY, epsilon=_BATCH_NORM_EPSILON)(x[j])
             output = tf.add(x[j] , output)
         x.append(output)
         output = tf.keras.layers.LeakyReLU()(output)
         output = tf.keras.layers.Dropout(0.1)(output)
-    for i in range(4):
+    for i in range(3):
         output = tf.keras.layers.BatchNormalization(
         momentum=_BATCH_NORM_DECAY, epsilon=_BATCH_NORM_EPSILON)(output)
         lstm = tf.keras.layers.LSTM(rnn_units , dropout = rnn_dropout ,  return_sequences=True , use_bias=True)
         output = tf.keras.layers.Bidirectional(lstm )(output)
         
         
-    output = tf.keras.layers.TimeDistributed(tf.keras.layers.Dense(fc_units))(output)
-    output = tf.keras.layers.BatchNormalization()(output)
+    output = tf.keras.layers.Dense(fc_units)(output)
+    output = tf.keras.layers.BatchNormalization(
+        momentum=_BATCH_NORM_DECAY, epsilon=_BATCH_NORM_EPSILON(output)
     output = tf.keras.layers.LeakyReLU()(output)
-    output = tf.keras.layers.TimeDistributed(tf.keras.layers.Dropout(fc_dropout))(output)
-    output = tf.keras.layers.TimeDistributed(tf.keras.layers.Dense(units=vocabulary_size, activation="softmax",
-                                    use_bias=True ))(output)
+    output = tf.keras.layers.Dropout(fc_dropout)(output)
+    output = tf.keras.layers.Dense(units=vocabulary_size, activation="softmax",
+                                    use_bias=True )(output)
     labels = Input(name='labels', shape=model['max_label_length'], dtype='int64')
     input_length = Input(name='input_lengths', shape=[1], dtype='int64')
     label_length = Input(name='label_lengths', shape=[1], dtype='int64')
