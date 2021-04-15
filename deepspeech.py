@@ -27,7 +27,7 @@ def SpeechModel (model,
                  name: str = "deepspeech2"):
         #super(ConvModule, self).__init__(**kwargs)
 
-    vocabulary_size = 95
+    vocabulary_size = 28
     conv_type= "conv2d"
     conv_kernels = [32 , 32 ,96  ]
     conv_strides=[[2,2],[1,2],[1,2] ]
@@ -83,6 +83,7 @@ def SpeechModel (model,
     output = tf.keras.layers.Dense(fc_units)(output)
     output = tf.keras.layers.LeakyReLU()(output)
     #output = tf.keras.layers.ZeroPadding1D(padding=(0, 1711))(output)
+   
     for i in range(5):
         output = tf.keras.layers.BatchNormalization(
         momentum=_BATCH_NORM_DECAY, epsilon=_BATCH_NORM_EPSILON)(output)
