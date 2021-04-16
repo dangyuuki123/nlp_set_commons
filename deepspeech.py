@@ -97,8 +97,8 @@ def SpeechModel (model,
         momentum=_BATCH_NORM_DECAY, epsilon=_BATCH_NORM_EPSILON)(output)
     output = tf.keras.layers.LeakyReLU()(output)
     output = tf.keras.layers.Dropout(fc_dropout)(output)
-    output = tf.keras.layers.Dense(units=vocabulary_size, activation="softmax",
-                                    use_bias=True )(output)
+    output = tf.keras.layers.TimeDistributed(tf.keras.layers.Dense(units=vocabulary_size, activation="softmax",
+                                    use_bias=True ))(output)
     labels = Input(name='labels', shape=model['max_label_length'], dtype='int64')
     input_length = Input(name='input_lengths', shape=[1], dtype='int64')
     label_length = Input(name='label_lengths', shape=[1], dtype='int64')
