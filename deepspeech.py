@@ -2,7 +2,7 @@ import tensorflow as tf
 from tensorflow.keras.layers import*
 from tensorflow.keras.models import*
 from tensorflow.keras.backend import *
-from sequence_wise_bn import SequenceBatchNorm
+#from sequence_wise_bn import SequenceBatchNorm
 import keras
 
 _BATCH_NORM_EPSILON = 1e-5
