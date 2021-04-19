@@ -85,8 +85,9 @@ def SpeechModel (model,
     #output = tf.keras.layers.ZeroPadding1D(padding=(0, 1711))(output)
    
     for i in range(5):
-        output = tf.keras.layers.BatchNormalization(
-        momentum=_BATCH_NORM_DECAY, epsilon=_BATCH_NORM_EPSILON)(output)
+        if ( i != 0 ):
+            output = tf.keras.layers.BatchNormalization(
+            momentum=_BATCH_NORM_DECAY, epsilon=_BATCH_NORM_EPSILON)(output)
         lstm = tf.keras.layers.LSTM(rnn_units , dropout = rnn_dropout ,  return_sequences=True , use_bias=True)
         output = tf.keras.layers.Bidirectional(lstm )(output)
 
