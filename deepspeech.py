@@ -32,7 +32,7 @@ def SpeechModel (model,
     conv_kernels = [32 , 32 ,96  ]
     conv_strides=[[2,2],[1,2],[1,2] ]
     conv_filters=[[11,3] , [11,3] , [11,3]]
-    conv_dropout=0.5
+    conv_dropout=0.1
     rnn_nlayers= 5
     nsubblocks =  2
     padding = [[5,20] , [5,10] ,[5,10]]
@@ -40,10 +40,10 @@ def SpeechModel (model,
     block_kernels= [11, 13, 17, 21, 25]
     block_dropout = 0.2
     rnn_type= "lstm"
-    rnn_units= 1024
+    rnn_units= 800
     rnn_bidirectional=True
     rnn_rowconv=  0
-    rnn_dropout= 0.0
+    rnn_dropout= 0.1
     fc_nlayers=  0
     fc_units= 1600
     fc_dropout=  0.1
