@@ -31,7 +31,7 @@ def SpeechModel (model,
     conv_type= "conv2d"
     conv_kernels = [32 , 32 ,96  ]
     conv_strides=[[2,2],[1,2],[1,2] ]
-    conv_filters=[[11,3] , [11,3] , [11,3]]
+    conv_filters=[[41,11] , [21,11] , [21,11]]
     conv_dropout=0.1
     rnn_nlayers= 5
     nsubblocks =  2
