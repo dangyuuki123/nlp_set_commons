@@ -49,7 +49,7 @@ def SpeechModel (model,
     assert len(conv_kernels) == len(conv_strides) == len(conv_filters)
     x = []
     #assert dropout >= 0.0 
-    input_ = tf.keras.Input(name = 'inputs' , shape = (model['max_input_length'] , 221 , 1 ))
+    input_ = tf.keras.Input(name = 'inputs' , shape = (model['max_input_length'] , 80 , 1 ))
     output = input_
     
     for i in range(len(conv_kernels)): 
